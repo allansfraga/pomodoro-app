@@ -75,6 +75,13 @@ function App() {
   useEffect(() => { localStorage.setItem('pomodoro:yt',       youtubeUrl)               }, [youtubeUrl])
   useEffect(() => { localStorage.setItem('pomodoro:goals',    JSON.stringify(goals))    }, [goals])
 
+  useEffect(() => {
+    if (mode !== 'focus' || !activeGoalId) return
+    const goal = goals.find(g => g.id === activeGoalId)
+    if (goal) setSessionLabel(goal.name)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGoalId, mode])
+
   const ytCmd = useCallback((func) => {
     iframeRef.current?.contentWindow?.postMessage(
       JSON.stringify({ event: 'command', func, args: [] }),
@@ -113,7 +120,8 @@ function App() {
     setHistory(prev => [{
       id: crypto.randomUUID(),
       mode,
-      name: mode === 'focus' ? sessionLabel : '',
+      name: mode === 'focus' ? (activeGoalId ? goals.find(g => g.id === activeGoalId)?.name ?? sessionLabel : sessionLabel) : '',
+      goalId: mode === 'focus' ? activeGoalId : null,
       startTime: startTimeRef.current,
       endTime,
       duration: settings[mode],
@@ -121,7 +129,6 @@ function App() {
     startTimeRef.current = Date.now()
 
     if (mode === 'focus') {
-      // Update active goal progress
       let nextLabel = ''
       if (activeGoalId) {
         const goal = goals.find(g => g.id === activeGoalId)
@@ -129,9 +136,9 @@ function App() {
           const newDone = goal.done + 1
           setGoals(prev => prev.map(g => g.id === activeGoalId ? { ...g, done: newDone } : g))
           if (newDone >= goal.total) {
-            setActiveGoalId(null) // goal completed — deselect
+            setActiveGoalId(null)
           } else {
-            nextLabel = goal.name // keep active for next session
+            nextLabel = goal.name
           }
         }
       }
@@ -157,7 +164,35 @@ function App() {
   const handleStartPause = () => {
     if (!isRunning) {
       if (startTimeRef.current === null) startTimeRef.current = Date.now()
-      if (mode === 'focus') ytCmd('playVideo')
+      if (mode === 'focus') {
+        ytCmd('playVideo')
+
+        let goalToUse = null
+
+        if (activeGoalId) {
+          const current = goals.find(g => g.id === activeGoalId)
+          if (current && current.done < current.total) {
+            goalToUse = current
+          } else {
+            const currentIdx = goals.findIndex(g => g.id === activeGoalId)
+            const next = goals.slice(currentIdx + 1).find(g => g.done < g.total)
+            if (next) {
+              goalToUse = next
+              setActiveGoalId(next.id)
+            } else {
+              setActiveGoalId(null)
+            }
+          }
+        } else {
+          const first = goals.find(g => g.done < g.total)
+          if (first) {
+            goalToUse = first
+            setActiveGoalId(first.id)
+          }
+        }
+
+        setSessionLabel(goalToUse ? goalToUse.name : '')
+      }
     } else {
       ytCmd('pauseVideo')
     }
@@ -375,7 +410,7 @@ function App() {
                 className="ring-progress"
                 style={{ stroke: modeColor[mode] }}
                 strokeDasharray={circumference}
-                strokeDashoffset={circumference * progress}
+                strokeDashoffset={-(circumference * progress)}
               />
             </svg>
             <div className="timer-inner">
