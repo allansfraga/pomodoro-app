@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import './App.css'
 
 const defaultSettings = { focus: 25, short: 5, long: 15, longEvery: 4 }
@@ -616,6 +617,7 @@ function App() {
       </main>
 
       <footer className="page-footer">Foque · Respire · Repita</footer>
+      <Analytics />
     </div>
   )
 }
