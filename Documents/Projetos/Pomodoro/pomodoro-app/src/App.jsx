@@ -136,7 +136,14 @@ function App() {
           const newDone = goal.done + 1
           setGoals(prev => prev.map(g => g.id === activeGoalId ? { ...g, done: newDone } : g))
           if (newDone >= goal.total) {
-            setActiveGoalId(null)
+            const currentIdx = goals.findIndex(g => g.id === activeGoalId)
+            const nextGoal = goals.slice(currentIdx + 1).find(g => g.done < g.total)
+            if (nextGoal) {
+              setActiveGoalId(nextGoal.id)
+              nextLabel = nextGoal.name
+            } else {
+              setActiveGoalId(null)
+            }
           } else {
             nextLabel = goal.name
           }
