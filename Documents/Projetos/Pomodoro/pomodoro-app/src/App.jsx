@@ -1,15 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Analytics } from '@vercel/analytics/react'
+import { translations, detectLang } from './i18n'
 import './App.css'
 
 const defaultSettings = { focus: 25, short: 5, long: 15, longEvery: 4 }
 
-const modeLabel = { focus: 'Foco', short: 'Pausa curta', long: 'Pausa longa' }
 const modeColor = {
   focus: 'var(--primary)',
   short: 'var(--short-break)',
   long:  'var(--long-break)',
 }
+
+const t = translations[detectLang()]
 
 function extractYouTubeId(url) {
   const match = url.match(
@@ -25,7 +27,7 @@ function loadSettings() {
   } catch { return defaultSettings }
 }
 
-function SettingField({ label, value, onChange, suffix = 'min' }) {
+function SettingField({ label, value, onChange, suffix = t.settings.suffixMin }) {
   return (
     <div className="setting-field">
       <span className="setting-field-label">{label}</span>
@@ -230,7 +232,6 @@ function App() {
     if (!isRunning && key === mode) setTimeLeft(v * 60)
   }
 
-  // Goals handlers
   const handleAddGoal = () => {
     if (!newGoalName.trim()) return
     setGoals(prev => [...prev, {
@@ -264,7 +265,6 @@ function App() {
     }
   }
 
-  // History handlers
   const updateHistoryName = (id, name) =>
     setHistory(prev => prev.map(item => item.id === id ? { ...item, name } : item))
   const clearHistory = () => setHistory([])
@@ -279,7 +279,7 @@ function App() {
   }
   const formatDay = ts => {
     const d = new Date(ts)
-    if (d.toDateString() === new Date().toDateString()) return 'Hoje'
+    if (d.toDateString() === new Date().toDateString()) return t.history.today
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
   }
 
@@ -313,22 +313,21 @@ function App() {
         <aside className="goals-card">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">Metas</h2>
-              <p className="panel-subtitle">Sessões de estudo</p>
+              <h2 className="panel-title">{t.goals.title}</h2>
+              <p className="panel-subtitle">{t.goals.subtitle}</p>
             </div>
             {goals.length > 0 && (
-              <button className="btn-trash" onClick={() => { setGoals([]); setActiveGoalId(null); setSessionLabel('') }} aria-label="Limpar metas">
+              <button className="btn-trash" onClick={() => { setGoals([]); setActiveGoalId(null); setSessionLabel('') }} aria-label={t.goals.clearAriaLabel}>
                 <TrashIcon />
               </button>
             )}
           </div>
 
-          {/* Add goal form */}
           <div className="goals-form">
             <input
               className="goals-name-input"
               type="text"
-              placeholder="Nome da meta..."
+              placeholder={t.goals.namePlaceholder}
               value={newGoalName}
               onChange={e => setNewGoalName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleAddGoal()}
@@ -342,23 +341,22 @@ function App() {
                   onChange={e => setNewGoalSessions(Math.max(1, parseInt(e.target.value) || 1))}
                   className="goals-sessions-input"
                 />
-                <span className="goals-sessions-label">sessões</span>
+                <span className="goals-sessions-label">{t.goals.sessions}</span>
               </div>
               <button className="goals-add-btn" onClick={handleAddGoal}>
-                + Adicionar
+                {t.goals.add}
               </button>
             </div>
           </div>
 
-          {/* Goals list */}
           <div className="goals-content">
             {goals.length === 0 ? (
               <div className="panel-empty">
                 <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                 </svg>
-                <p>Nenhuma meta ainda.</p>
-                <span>Adicione uma meta acima.</span>
+                <p>{t.goals.empty}</p>
+                <span>{t.goals.emptyHint}</span>
               </div>
             ) : (
               <ul className="goals-list">
@@ -405,7 +403,7 @@ function App() {
                 className={`tab ${mode === m ? 'active' : ''}`}
                 onClick={() => handleModeSwitch(m)}
               >
-                {modeLabel[m]}
+                {t.modeLabel[m]}
               </button>
             ))}
           </div>
@@ -422,10 +420,10 @@ function App() {
               />
             </svg>
             <div className="timer-inner">
-              <span className="timer-mode-label">{modeLabel[mode]}</span>
+              <span className="timer-mode-label">{t.modeLabel[mode]}</span>
               <span className="timer-display">{formatTime(timeLeft)}</span>
               <span className="timer-cycle">
-                Ciclo {focusCount + (mode === 'focus' ? 1 : 0)} · {focusCount} concluído{focusCount !== 1 ? 's' : ''}
+                {t.timer.cycle(focusCount + (mode === 'focus' ? 1 : 0), focusCount)}
               </span>
             </div>
           </div>
@@ -442,14 +440,14 @@ function App() {
                     <rect x="6" y="4" width="4" height="16" rx="1"/>
                     <rect x="14" y="4" width="4" height="16" rx="1"/>
                   </svg>
-                  Pausar
+                  {t.timer.pause}
                 </>
               ) : (
                 <>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                     <polygon points="5 3 19 12 5 21 5 3"/>
                   </svg>
-                  Iniciar
+                  {t.timer.start}
                 </>
               )}
             </button>
@@ -465,7 +463,7 @@ function App() {
             <input
               className="session-label-input"
               type="text"
-              placeholder="Qual é o foco desta sessão?"
+              placeholder={t.timer.sessionPlaceholder}
               value={sessionLabel}
               onChange={e => setSessionLabel(e.target.value)}
               maxLength={80}
@@ -484,7 +482,7 @@ function App() {
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
-                Configurações
+                {t.settings.title}
               </span>
               <svg
                 className={`settings-chevron ${settingsOpen ? 'open' : ''}`}
@@ -498,10 +496,10 @@ function App() {
             <div className={`settings-body ${settingsOpen ? 'open' : ''}`}>
               <div className="settings-body-inner">
                 <div className="settings-fields">
-                  <SettingField label="Foco"         value={settings.focus}     onChange={v => updateSetting('focus',     v)} />
-                  <SettingField label="Pausa curta"  value={settings.short}     onChange={v => updateSetting('short',     v)} />
-                  <SettingField label="Pausa longa"  value={settings.long}      onChange={v => updateSetting('long',      v)} />
-                  <SettingField label="Longa a cada" value={settings.longEvery} onChange={v => updateSetting('longEvery', v)} suffix="ciclos" />
+                  <SettingField label={t.settings.focus}      value={settings.focus}     onChange={v => updateSetting('focus',     v)} />
+                  <SettingField label={t.settings.shortBreak} value={settings.short}     onChange={v => updateSetting('short',     v)} />
+                  <SettingField label={t.settings.longBreak}  value={settings.long}      onChange={v => updateSetting('long',      v)} />
+                  <SettingField label={t.settings.longEvery}  value={settings.longEvery} onChange={v => updateSetting('longEvery', v)} suffix={t.settings.suffixCycles} />
                 </div>
                 <div className="settings-restore">
                   <button onClick={() => { setSettings(defaultSettings); setTimeLeft(defaultSettings[mode] * 60) }}>
@@ -509,7 +507,7 @@ function App() {
                       <polyline points="23 4 23 10 17 10"/>
                       <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                     </svg>
-                    Restaurar padrão
+                    {t.settings.restore}
                   </button>
                 </div>
 
@@ -519,12 +517,12 @@ function App() {
                       <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8z"/>
                       <polygon fill="white" points="9.7 15.5 15.8 12 9.7 8.5 9.7 15.5"/>
                     </svg>
-                    Música para foco
+                    {t.settings.youtubeLabel}
                   </p>
                   <input
                     className="youtube-input"
                     type="text"
-                    placeholder="Cole o link do YouTube..."
+                    placeholder={t.settings.youtubePlaceholder}
                     value={youtubeUrl}
                     onChange={e => setYoutubeUrl(e.target.value)}
                   />
@@ -552,11 +550,11 @@ function App() {
 
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">Histórico</h2>
-              <p className="panel-subtitle">Sessões concluídas</p>
+              <h2 className="panel-title">{t.history.title}</h2>
+              <p className="panel-subtitle">{t.history.subtitle}</p>
             </div>
             {history.length > 0 && (
-              <button className="btn-trash" onClick={clearHistory} aria-label="Limpar histórico">
+              <button className="btn-trash" onClick={clearHistory} aria-label={t.history.clearAriaLabel}>
                 <TrashIcon />
               </button>
             )}
@@ -564,11 +562,11 @@ function App() {
 
           <div className="history-stats">
             <div className="stat-box">
-              <span className="stat-label">Foco total</span>
+              <span className="stat-label">{t.history.focusTotal}</span>
               <span className="stat-value">{focusTotal}min</span>
             </div>
             <div className="stat-box">
-              <span className="stat-label">Sessões</span>
+              <span className="stat-label">{t.history.sessions}</span>
               <span className="stat-value">{focusSessions}</span>
             </div>
           </div>
@@ -580,8 +578,8 @@ function App() {
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
-                <p>Nenhuma sessão ainda.</p>
-                <span>Inicie um timer para começar.</span>
+                <p>{t.history.empty}</p>
+                <span>{t.history.emptyHint}</span>
               </div>
             ) : (
               <div className="history-list">
@@ -593,14 +591,14 @@ function App() {
                         <li key={item.id} className="history-item">
                           <div className="history-item-row">
                             <span className="history-dot" style={{ background: modeColor[item.mode] }} />
-                            <span className="history-label">{modeLabel[item.mode]}</span>
+                            <span className="history-label">{t.modeLabel[item.mode]}</span>
                             <span className="history-meta">{item.duration}min</span>
                             <span className="history-meta">{formatTimeOfDay(item.endTime)}</span>
                           </div>
                           <input
                             className="history-name-input"
                             type="text"
-                            placeholder={item.mode === 'focus' ? 'nome da sessão...' : 'nota da pausa...'}
+                            placeholder={item.mode === 'focus' ? t.history.sessionPlaceholder : t.history.breakPlaceholder}
                             value={item.name}
                             onChange={e => updateHistoryName(item.id, e.target.value)}
                           />
@@ -616,7 +614,7 @@ function App() {
         </aside>
       </main>
 
-      <footer className="page-footer">Foque · Respire · Repita</footer>
+      <footer className="page-footer">{t.footer}</footer>
       <Analytics />
     </div>
   )
