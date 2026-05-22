@@ -58,7 +58,7 @@ function App() {
   const [timeLeft, setTimeLeft]         = useState(() => loadSettings().focus * 60)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sessionLabel, setSessionLabel] = useState('')
-  const [youtubeUrl, setYoutubeUrl]     = useState(() => localStorage.getItem('pomodoro:yt') || 'https://www.youtube.com/watch?v=jfKfPfyJRdk')
+  const [youtubeUrl, setYoutubeUrl]     = useState(() => localStorage.getItem('pomodoro:yt') || 'https://www.youtube.com/watch?v=EWrX250Zhko')
   const [history, setHistory]           = useState(() => {
     try { return JSON.parse(localStorage.getItem('pomodoro:history') || '[]') } catch { return [] }
   })
